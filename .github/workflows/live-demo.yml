@@ -9,6 +9,7 @@ on:
       - "internal/**"
       - "Dockerfile"
       - "docker-compose.yml"
+      - "configs/**"
       - ".github/workflows/live-demo.yml"
 
 permissions:
@@ -38,8 +39,9 @@ jobs:
 
       - name: Wait API
         run: |
-          for i in {1..20}; do
-            if curl -fsS http://127.0.0.1:8080/healthz >/dev/null; then
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8080/healthz >/dev/null 2>&1; then
+              echo "API is ready"
               exit 0
             fi
             sleep 1
@@ -55,36 +57,49 @@ jobs:
         id: status
         run: |
           STATUS=$(curl -fsS http://127.0.0.1:8080/v1/status)
-          echo "json=$STATUS" >> "$GITHUB_OUTPUT"
           echo "$STATUS"
+          echo "json<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$STATUS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: NTP query demo
         id: ntpquery
         run: |
           RESULT=$(go run ./cmd/ntp-query -server 127.0.0.1:12300)
-          echo "json=$RESULT" >> "$GITHUB_OUTPUT"
           echo "$RESULT"
+          echo "json<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$RESULT" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Write demo-result.json
         run: |
-          cat > docs/demo-result.json <<'EOF'
-          {
-            "runAt": "${{ github.event.head_commit.timestamp || '' }}",
-            "ntp": ${{ steps.ntpquery.outputs.json }},
-            "status": ${{ steps.status.outputs.json }}
-          }
-          EOF
-          # Fix runAt to current time if empty
-          python3 -c "
+          python3 - <<'PYEOF'
           import json, datetime
-          with open('docs/demo-result.json') as f:
-              d = json.load(f)
-          if not d.get('runAt'):
-              d['runAt'] = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-          with open('docs/demo-result.json', 'w') as f:
-              json.dump(d, f, indent=2)
-          "
-          cat docs/demo-result.json
+
+          ntp_raw = '''${{ steps.ntpquery.outputs.json }}'''
+          status_raw = '''${{ steps.status.outputs.json }}'''
+
+          try:
+              ntp = json.loads(ntp_raw)
+          except Exception:
+              ntp = {}
+
+          try:
+              status = json.loads(status_raw)
+          except Exception:
+              status = {}
+
+          result = {
+              "runAt": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "ntp": ntp,
+              "status": status,
+          }
+
+          with open("docs/demo-result.json", "w") as f:
+              json.dump(result, f, indent=2)
+
+          print(json.dumps(result, indent=2))
+          PYEOF
 
       - name: Commit demo result
         run: |
