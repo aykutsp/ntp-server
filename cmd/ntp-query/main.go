@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aykutsp/ntp-server/internal/ntp"
@@ -69,7 +70,7 @@ func main() {
 	res := result{
 		Server:      *server,
 		Stratum:     resp[1],
-		ReferenceID: string(resp[12:16]),
+		ReferenceID: sanitizeRefID(resp[12:16]),
 		ReceiveTime: t2,
 		Transmit:    t3,
 		OffsetMs:    float64(offset) / float64(time.Millisecond),
@@ -78,6 +79,25 @@ func main() {
 
 	out, _ := json.MarshalIndent(res, "", "  ")
 	fmt.Println(string(out))
+}
+
+func sanitizeRefID(b []byte) string {
+	// If all bytes are printable ASCII, return as string (e.g. "LOCL", "GOOG")
+	allPrint := true
+	for _, c := range b {
+		if c < 0x20 || c > 0x7e {
+			allPrint = false
+			break
+		}
+	}
+	if allPrint {
+		return strings.TrimRight(string(b), "\x00")
+	}
+	// Otherwise it's an IP address (stratum 2+) — format as dotted decimal
+	if len(b) == 4 {
+		return fmt.Sprintf("%d.%d.%d.%d", b[0], b[1], b[2], b[3])
+	}
+	return fmt.Sprintf("%x", b)
 }
 
 func toBytes(v uint64) []byte {

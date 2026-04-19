@@ -37,61 +37,43 @@ jobs:
             -p 8080:8080/tcp \
             ntp-server:demo
 
-      - name: Wait API
+      - name: Wait for API
         run: |
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:8080/healthz >/dev/null 2>&1; then
-              echo "API is ready"
-              exit 0
+              echo "API ready after ${i}s"
+              break
             fi
             sleep 1
           done
-          echo "API did not become healthy in time"
-          docker logs ntp-server-demo
-          exit 1
 
-      - name: Show health
-        run: curl -fsS http://127.0.0.1:8080/healthz
-
-      - name: Collect status
-        id: status
+      - name: Wait for upstream sync
         run: |
-          STATUS=$(curl -fsS http://127.0.0.1:8080/v1/status)
-          echo "$STATUS"
-          echo "json<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$STATUS" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "Waiting 20s for upstream NTP sync..."
+          sleep 20
+          curl -fsS http://127.0.0.1:8080/v1/status | python3 -c "import sys,json; d=json.load(sys.stdin); print('synced:', d['synced'], '| stratum:', d['stratum'], '| upstream:', d.get('upstream',''))"
 
-      - name: NTP query demo
-        id: ntpquery
+      - name: Collect results and write demo-result.json
         run: |
-          RESULT=$(go run ./cmd/ntp-query -server 127.0.0.1:12300)
-          echo "$RESULT"
-          echo "json<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$RESULT" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          curl -fsS http://127.0.0.1:8080/v1/status > /tmp/status.json
+          go run ./cmd/ntp-query -server 127.0.0.1:12300 > /tmp/ntp.json
+          echo "--- status ---"
+          cat /tmp/status.json
+          echo "--- ntp ---"
+          cat /tmp/ntp.json
 
-      - name: Write demo-result.json
-        run: |
           python3 - <<'PYEOF'
           import json, datetime
 
-          ntp_raw = '''${{ steps.ntpquery.outputs.json }}'''
-          status_raw = '''${{ steps.status.outputs.json }}'''
+          with open('/tmp/status.json') as f:
+              status = json.load(f)
 
-          try:
-              ntp = json.loads(ntp_raw)
-          except Exception:
-              ntp = {}
-
-          try:
-              status = json.loads(status_raw)
-          except Exception:
-              status = {}
+          with open('/tmp/ntp.json') as f:
+              ntp = json.load(f)
 
           result = {
-              "runAt": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-              "ntp": ntp,
+              "runAt":  datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "ntp":    ntp,
               "status": status,
           }
 
@@ -105,6 +87,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase
           git add docs/demo-result.json
           git diff --cached --quiet || git commit -m "chore: update live demo result [skip ci]"
           git push
