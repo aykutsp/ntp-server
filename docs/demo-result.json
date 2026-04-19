@@ -1,17 +1,25 @@
 {
-  "runAt": "2026-04-19T15:01:52Z",
-  "ntp": {},
+  "runAt": "2026-04-19T15:19:57Z",
+  "ntp": {
+    "server": "127.0.0.1:12300",
+    "stratum": 3,
+    "referenceId": "10.4.0.7",
+    "receiveTime": "2026-04-19T15:19:56.990521687Z",
+    "transmitTime": "2026-04-19T15:19:56.99053659Z",
+    "offsetMs": 0.046715,
+    "rttMs": 0.347862
+  },
   "status": {
-    "nowUTC": "2026-04-19T15:01:46.331985365Z",
+    "nowUTC": "2026-04-19T15:19:51.600097591Z",
     "listenAddress": "0.0.0.0:12300",
     "workers": 32,
-    "synced": false,
-    "stratum": 16,
-    "offsetMillis": 0,
-    "referenceID": "LOCL",
-    "referenceTime": "2026-04-19T15:01:46.285304387Z",
-    "upstream": "",
-    "lastSyncError": "not synced yet",
+    "synced": true,
+    "stratum": 3,
+    "offsetMillis": 0.353282,
+    "referenceID": "\ufffd\b\u0004",
+    "referenceTime": "2026-04-19T15:19:42.0779998Z",
+    "upstream": "time.cloudflare.com:123",
+    "lastSyncError": "",
     "clientRateLimitPerSecond": 64,
     "globalRateLimitPerSecond": 500000
   }
