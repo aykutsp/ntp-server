@@ -11,18 +11,22 @@ A production-grade NTP server written in Go. Runs on Linux, macOS, and Windows. 
 
 ## Live Demo
 
-The repository runs a live end-to-end demo on every push via GitHub Actions.
+**[https://aykutsp.github.io/ntp-server](https://aykutsp.github.io/ntp-server)**
 
-**[View Live Demo Workflow](https://github.com/aykutsp/ntp-server/actions/workflows/live-demo.yml)**
+The demo page shows:
+- Live UTC clock ticking in your browser
+- Stratum, Reference ID, offset and RTT from the last CI run
+- Upstream sync status
+- Copy-paste connection details and client examples for chrony, ntpd, macOS, Windows, and Python
 
-The workflow:
-1. Builds the Docker image from source
-2. Starts the container with UDP `12300` and HTTP `8080` exposed
-3. Waits for the health endpoint to become ready
-4. Hits `/healthz` and `/v1/status` and prints the JSON responses
-5. Runs `cmd/ntp-query` against the live container and prints the NTP response
+The page is backed by a `docs/demo-result.json` file that gets written on every CI run. The workflow:
+1. Builds the Docker image and starts the container
+2. Hits `/healthz` and `/v1/status`
+3. Runs `cmd/ntp-query` against the live container
+4. Writes the NTP + status JSON into `docs/demo-result.json` and commits it
+5. GitHub Pages picks up the change and redeploys automatically
 
-You can trigger it manually from the Actions tab using **Run workflow**.
+[View CI workflow](https://github.com/aykutsp/ntp-server/actions/workflows/live-demo.yml) · [Trigger manually](https://github.com/aykutsp/ntp-server/actions/workflows/live-demo.yml)
 
 ---
 

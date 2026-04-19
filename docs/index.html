@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NTP Server — Live Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: #8b949e;
+      font-size: 0.9rem;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 28px 32px;
+      width: 100%;
+      max-width: 560px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8b949e;
+      margin-bottom: 18px;
+    }
+
+    .time-display {
+      font-size: 2.4rem;
+      font-weight: 300;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -1px;
+      color: #58a6ff;
+      margin-bottom: 6px;
+    }
+
+    .date-display {
+      font-size: 0.95rem;
+      color: #8b949e;
+      margin-bottom: 20px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-top: 1px solid #21262d;
+      font-size: 0.875rem;
+    }
+
+    .row-label { color: #8b949e; }
+    .row-value { font-family: 'Cascadia Code', 'Fira Code', monospace; color: #e6edf3; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .badge-green { background: #1a3a2a; color: #3fb950; border: 1px solid #238636; }
+    .badge-yellow { background: #2d2a1a; color: #d29922; border: 1px solid #9e6a03; }
+    .badge-gray { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .connect-block {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-top: 8px;
+    }
+
+    .connect-block p {
+      font-size: 0.8rem;
+      color: #8b949e;
+      margin-bottom: 10px;
+    }
+
+    .connect-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+    }
+
+    .connect-label {
+      color: #8b949e;
+      width: 80px;
+      flex-shrink: 0;
+    }
+
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 5px;
+      padding: 3px 8px;
+      font-size: 0.82rem;
+      color: #79c0ff;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    code:hover { background: #2d333b; }
+
+    .copy-hint {
+      font-size: 0.72rem;
+      color: #3fb950;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .copy-hint.show { opacity: 1; }
+
+    .cmd-block {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 8px;
+    }
+
+    .cmd-block pre {
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.8rem;
+      color: #79c0ff;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .last-run {
+      font-size: 0.75rem;
+      color: #8b949e;
+      margin-top: 14px;
+      text-align: right;
+    }
+
+    .footer {
+      margin-top: 32px;
+      font-size: 0.78rem;
+      color: #484f58;
+      text-align: center;
+    }
+
+    .footer a { color: #58a6ff; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    #status-badge { margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+  <h1>⏱ NTP Server</h1>
+  <p class="subtitle">Open-source NTP server written in Go</p>
+
+  <!-- Live Clock -->
+  <div class="card">
+    <div class="card-title">Current UTC Time (live)</div>
+    <div class="time-display" id="clock">--:--:--</div>
+    <div class="date-display" id="date">Loading...</div>
+
+    <div class="row">
+      <span class="row-label">Stratum</span>
+      <span class="row-value" id="stratum">—</span>
+    </div>
+    <div class="row">
+      <span class="row-label">Reference ID</span>
+      <span class="row-value" id="refid">—</span>
+    </div>
+    <div class="row">
+      <span class="row-label">Offset (last run)</span>
+      <span class="row-value" id="offset">—</span>
+    </div>
+    <div class="row">
+      <span class="row-label">RTT (last run)</span>
+      <span class="row-value" id="rtt">—</span>
+    </div>
+    <div class="row">
+      <span class="row-label">Upstream</span>
+      <span class="row-value" id="upstream">—</span>
+    </div>
+    <div class="row">
+      <span class="row-label">Sync status</span>
+      <span id="sync-badge"><span class="badge badge-gray"><span class="dot"></span>loading</span></span>
+    </div>
+
+    <div class="last-run">Last CI run: <span id="last-run">—</span></div>
+  </div>
+
+  <!-- Connect -->
+  <div class="card">
+    <div class="card-title">Run Your Own &amp; Connect</div>
+
+    <div class="connect-block">
+      <p>Clone and start the server locally, then point your NTP client at it:</p>
+
+      <div class="connect-row">
+        <span class="connect-label">Clone</span>
+        <code onclick="copyText('git clone https://github.com/aykutsp/ntp-server.git', this)">git clone https://github.com/aykutsp/ntp-server.git</code>
+      </div>
+      <div class="connect-row">
+        <span class="connect-label">Run</span>
+        <code onclick="copyText('go run ./cmd/ntp-server -config ./configs/server.example.json', this)">go run ./cmd/ntp-server -config ./configs/server.example.json</code>
+      </div>
+      <div class="connect-row">
+        <span class="connect-label">NTP port</span>
+        <code onclick="copyText('127.0.0.1:12300', this)">127.0.0.1:12300</code>
+        <span class="copy-hint" id="hint-port"></span>
+      </div>
+      <div class="connect-row">
+        <span class="connect-label">HTTP API</span>
+        <code onclick="copyText('http://127.0.0.1:8080', this)">http://127.0.0.1:8080</code>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;" class="card-title">Client Examples</div>
+
+    <div class="cmd-block" style="margin-top:8px;">
+      <pre id="client-examples"># Built-in query tool
+go run ./cmd/ntp-query -server 127.0.0.1:12300
+
+# Linux — chrony (/etc/chrony.conf)
+server 127.0.0.1 port 12300 iburst
+
+# macOS
+sntp -S 127.0.0.1
+
+# Windows PowerShell
+w32tm /config /manualpeerlist:"127.0.0.1" /syncfromflags:manual /update
+w32tm /resync /force
+
+# Python
+pip install ntplib
+python -c "import ntplib; r=ntplib.NTPClient().request('127.0.0.1',port=12300); print(r.offset, r.stratum)"</pre>
+    </div>
+  </div>
+
+  <!-- Links -->
+  <div class="footer">
+    <a href="https://github.com/aykutsp/ntp-server">GitHub Repository</a> ·
+    <a href="https://github.com/aykutsp/ntp-server/actions/workflows/live-demo.yml">CI / Live Demo Workflow</a> ·
+    <a href="https://github.com/aykutsp/ntp-server/blob/master/README.md">Documentation</a>
+  </div>
+
+  <script>
+    // Live UTC clock
+    function tickClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent =
+        now.toUTCString().split(' ')[4];
+      document.getElementById('date').textContent =
+        now.toUTCString().replace(/ \d{2}:\d{2}:\d{2}.*/, '').replace(/^[A-Z][a-z]+, /, '');
+    }
+    tickClock();
+    setInterval(tickClock, 1000);
+
+    // Load last CI result
+    fetch('demo-result.json?_=' + Date.now())
+      .then(r => r.json())
+      .then(data => {
+        const ntp = data.ntp || {};
+        const status = data.status || {};
+
+        if (ntp.offsetMs !== undefined)
+          document.getElementById('offset').textContent = ntp.offsetMs.toFixed(3) + ' ms';
+        if (ntp.rttMs !== undefined)
+          document.getElementById('rtt').textContent = ntp.rttMs.toFixed(3) + ' ms';
+        if (ntp.stratum !== undefined)
+          document.getElementById('stratum').textContent = ntp.stratum;
+        if (ntp.referenceId !== undefined)
+          document.getElementById('refid').textContent = ntp.referenceId.replace(/\0/g, '');
+        if (status.upstream)
+          document.getElementById('upstream').textContent = status.upstream;
+
+        const synced = status.synced;
+        const badge = document.getElementById('sync-badge');
+        if (synced === true) {
+          badge.innerHTML = '<span class="badge badge-green"><span class="dot"></span>synced</span>';
+        } else if (synced === false) {
+          badge.innerHTML = '<span class="badge badge-yellow"><span class="dot"></span>unsynced</span>';
+        }
+
+        if (data.runAt) {
+          document.getElementById('last-run').textContent =
+            new Date(data.runAt).toUTCString();
+        }
+      })
+      .catch(() => {
+        document.getElementById('last-run').textContent = 'No CI data yet — trigger the workflow';
+      });
+
+    function copyText(text, el) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = el.textContent;
+        el.textContent = 'copied!';
+        setTimeout(() => el.textContent = orig, 1500);
+      });
+    }
+  </script>
+</body>
+</html>
