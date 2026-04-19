@@ -1,5 +1,18 @@
 {
-  "runAt": null,
+  "runAt": "2026-04-19T15:01:52Z",
   "ntp": {},
-  "status": {}
+  "status": {
+    "nowUTC": "2026-04-19T15:01:46.331985365Z",
+    "listenAddress": "0.0.0.0:12300",
+    "workers": 32,
+    "synced": false,
+    "stratum": 16,
+    "offsetMillis": 0,
+    "referenceID": "LOCL",
+    "referenceTime": "2026-04-19T15:01:46.285304387Z",
+    "upstream": "",
+    "lastSyncError": "not synced yet",
+    "clientRateLimitPerSecond": 64,
+    "globalRateLimitPerSecond": 500000
+  }
 }
