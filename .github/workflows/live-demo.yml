@@ -1,0 +1,63 @@
+name: Live Demo
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "cmd/**"
+      - "internal/**"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - ".github/workflows/live-demo.yml"
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.x"
+
+      - name: Build container
+        run: docker build -t ntp-server:demo .
+
+      - name: Run container
+        run: |
+          docker run -d --name ntp-server-demo \
+            -p 12300:12300/udp \
+            -p 8080:8080/tcp \
+            ntp-server:demo
+
+      - name: Wait API
+        run: |
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:8080/healthz >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "API did not become healthy in time"
+          docker logs ntp-server-demo
+          exit 1
+
+      - name: Show health
+        run: curl -fsS http://127.0.0.1:8080/healthz
+
+      - name: Show status
+        run: curl -fsS http://127.0.0.1:8080/v1/status
+
+      - name: NTP query demo
+        run: go run ./cmd/ntp-query -server 127.0.0.1:12300
+
+      - name: Logs
+        if: always()
+        run: docker logs ntp-server-demo
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f ntp-server-demo

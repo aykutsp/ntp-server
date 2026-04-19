@@ -1,0 +1,66 @@
+{
+  "ntp": {
+    "listenAddress": "0.0.0.0:12300",
+    "workers": 32,
+    "readBufferBytes": 33554432,
+    "writeBufferBytes": 33554432,
+    "readTimeoutMillis": 1000,
+    "writeTimeoutMillis": 1000,
+    "clientRateLimitPerSecond": 64,
+    "clientRateLimitBurst": 128,
+    "globalRateLimitPerSecond": 500000,
+    "globalRateLimitBurst": 120000,
+    "serveUnsynced": true,
+    "unsyncedStratum": 16,
+    "referenceID": "LOCL",
+    "precisionExponent": -20,
+    "rootDelayMillis": 1.0,
+    "rootDispersionMillis": 1.0,
+    "enableKissOfDeathOnDeny": true,
+    "kissOfDeathResponseOnDeny": "RATE"
+  },
+  "policy": {
+    "allowCIDRs": [
+      "0.0.0.0/0",
+      "::/0"
+    ],
+    "denyCIDRs": [],
+    "dns": {
+      "enableReverseLookup": false,
+      "allowSuffixes": [],
+      "denySuffixes": [],
+      "cacheTTLSeconds": 300,
+      "lookupTimeoutMillis": 400,
+      "allowOnLookupError": true,
+      "resolverNameservers": [
+        "1.1.1.1:53",
+        "8.8.8.8:53"
+      ]
+    }
+  },
+  "upstream": {
+    "enabled": true,
+    "servers": [
+      "time.cloudflare.com:123",
+      "time.google.com:123",
+      "pool.ntp.org:123"
+    ],
+    "syncIntervalSeconds": 10,
+    "timeoutMillis": 1200,
+    "maxAcceptedOffsetMillis": 1500,
+    "samplesPerSync": 1
+  },
+  "api": {
+    "enabled": true,
+    "listenAddress": "127.0.0.1:8080",
+    "readTimeoutMillis": 2000,
+    "writeTimeoutMillis": 2000,
+    "shutdownTimeoutMillis": 5000,
+    "authToken": "",
+    "exposeConfig": false
+  },
+  "runtime": {
+    "gomaxprocs": 8,
+    "logLevel": "INFO"
+  }
+}

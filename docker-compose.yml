@@ -1,0 +1,12 @@
+services:
+  ntp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ntp-server
+    restart: unless-stopped
+    ports:
+      - "12300:12300/udp"
+      - "8080:8080/tcp"
+    volumes:
+      - ./configs/server.example.json:/etc/ntp-server/config.json:ro

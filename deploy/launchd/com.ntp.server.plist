@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.ntp.server</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/ntp-server</string>
+    <string>-config</string>
+    <string>/usr/local/etc/ntp-server/config.json</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/usr/local/var/log/ntp-server.log</string>
+  <key>StandardErrorPath</key>
+  <string>/usr/local/var/log/ntp-server.err.log</string>
+</dict>
+</plist>
